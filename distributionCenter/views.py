@@ -81,7 +81,7 @@ class ProductBuyAPIView(APIView):
         product, created = Product.objects.get_or_create(
             name=data["product"],
             defaults={
-                "name": data.get("name", data["product"]),
+                "name": data.get("name", data["product"]), # preciso fazer com que o valor de entrada seja um slug
                 "quantity": data.get("quantity", 0),
                 "price": data.get("price", 0),
                 "is_active": False,
@@ -148,11 +148,11 @@ class ProductSellAPIView(APIView):
                     "error_msg": str(e)
                 }, status=status.HTTP_424_FAILED_DEPENDENCY)
 
-            if response.status_code != 200:
+            if response.status_code != 200: # Pensar em como tratar isso de forma correta
                 return Response({
                     "status": "error",
                     "message": "HUB could not answer correctly."
-                }, status=status.HTTP_424_FAILED_DEPENDENCY)
+                }, status=status.HTTP_200_OK) # Não esta OK, mas preciso saber se a response influencia no fluxo
             
         with transaction.atomic():
             product.quantity -= quantity
@@ -165,3 +165,30 @@ class ProductSellAPIView(APIView):
                 "quantity": product.quantity, 
                 "action": "transaction"
             }, status=status.HTTP_200_OK)
+
+
+class HubTradeResponseAPIView(APIView):
+    """
+    POST - **product** and **quantity**
+    - HUB will access this endpoint to gather the candidates to trade
+    - *WARNING: Apply permissions rules to this endpoint (only HUB can access)*
+    """
+    def get(self, request, *args, **kwargs):
+        product_slug = kwargs.get('slug')
+        quantity = int(kwargs.get('quantity'))
+
+        product = get_object_or_404(Product, slug=product_slug)
+
+        if product.quantity <= quantity:
+            available = True
+        else:
+            available = False
+
+        return Response({
+            "status": "success",
+            "product": product.slug,
+            "quantity": product.quantity,
+            "price": product.price,
+            "available": available,
+            "action": "report"        
+        }, status=status.HTTP_200_OK)
