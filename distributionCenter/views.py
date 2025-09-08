@@ -182,7 +182,7 @@ class HubTradeResponseAPIView(APIView):
         
         product = get_object_or_404(Product, slug=product_slug)
         print(product)
-        if product.quantity <= quantity:
+        if product.quantity >= quantity:
             available = True
         else:
             available = False
