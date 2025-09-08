@@ -122,14 +122,13 @@ class ProductSellAPIView(APIView):
         quantity = data['quantity']
 
         product = get_object_or_404(Product, slug=product_slug)
-        
+        print(product)
         if product.quantity < quantity:
             hub_ip = settings.HUB_IP
-            quantity_needed = quantity - product.quantity
 
             request_json = {
                 "product": product.slug,
-                "quantity": quantity_needed
+                "quantity": quantity - product.quantity
             }
 
             try:
@@ -138,6 +137,8 @@ class ProductSellAPIView(APIView):
                     json=request_json,
                     timeout=5
                 )
+                print("Payload enviado ao HUB:", request_json)
+                print("Resposta do HUB:", response.status_code, response.text)
 
                 response.raise_for_status()
             except Exception as e:
@@ -151,7 +152,8 @@ class ProductSellAPIView(APIView):
             if response.status_code != 200: # Pensar em como tratar isso de forma correta
                 return Response({
                     "status": "error",
-                    "message": "HUB could not answer correctly."
+                    "message": "HUB could not answer correctly.",
+                    "info": f"Could not finish the trade! Not enought amount of {product_slug}"
                 }, status=status.HTTP_200_OK) # Não esta OK, mas preciso saber se a response influencia no fluxo
             
         with transaction.atomic():
@@ -160,7 +162,7 @@ class ProductSellAPIView(APIView):
 
             return Response({
                 "status": "success",
-                "message": f"Sold {quantity_needed} units of {product.slug}.",
+                "message": f"Sold {quantity} units of {product.slug}.",
                 "product": product.name,
                 "quantity": product.quantity, 
                 "action": "transaction"
@@ -174,11 +176,12 @@ class HubTradeResponseAPIView(APIView):
     - *WARNING: Apply permissions rules to this endpoint (only HUB can access)*
     """
     def get(self, request, *args, **kwargs):
-        product_slug = kwargs.get('slug')
+        product_slug = kwargs.get('product')
         quantity = int(kwargs.get('quantity'))
-
+        print(product_slug, quantity)
+        
         product = get_object_or_404(Product, slug=product_slug)
-
+        print(product)
         if product.quantity <= quantity:
             available = True
         else:
