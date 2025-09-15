@@ -125,10 +125,11 @@ class ProductSellAPIView(APIView):
         print(product)
         if product.quantity < quantity:
             hub_ip = settings.HUB_IP
+            quantity_needed = quantity - product.quantity
 
             request_json = {
                 "product": product.slug,
-                "quantity": quantity - product.quantity
+                "quantity": quantity_needed
             }
 
             try:
@@ -154,9 +155,10 @@ class ProductSellAPIView(APIView):
                     "status": "error",
                     "message": "HUB could not answer correctly.",
                     "info": f"Could not finish the trade! Not enought amount of {product_slug}"
-                }, status=status.HTTP_200_OK) # Não esta OK, mas preciso saber se a response influencia no fluxo
+                }, status=status.HTTP_424_FAILED_DEPENDENCY) 
             
         with transaction.atomic():
+            product.quantity += quantity_needed
             product.quantity -= quantity
             product.save()
 
@@ -183,9 +185,9 @@ class HubTradeResponseAPIView(APIView):
         product = get_object_or_404(Product, slug=product_slug)
         print(product)
         if product.quantity >= quantity:
-            available = True
+            available = "true"
         else:
-            available = False
+            available = "false"
 
         return Response({
             "status": "success",
