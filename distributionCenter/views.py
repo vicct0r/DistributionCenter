@@ -120,6 +120,7 @@ class ProductSellAPIView(APIView):
         data = serializer.validated_data
         product_slug = data['product']
         quantity = data['quantity']
+        quantity_needed = quantity
 
         product = get_object_or_404(Product, slug=product_slug)
         print(product)
