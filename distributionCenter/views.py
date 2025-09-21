@@ -114,7 +114,7 @@ class ProductBuyAPIView(APIView):
 
  
 class ProductSellAPIView(APIView):
-    def post(self, request, *args, **kwargs):
+    def patch(self, request, *args, **kwargs):
         serializer = ProductTradeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
