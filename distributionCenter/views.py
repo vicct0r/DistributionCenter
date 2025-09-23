@@ -73,7 +73,7 @@ class ProductFindAPIView(APIView):
 
 
 class ProductBuyAPIView(APIView):
-    def patch(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         serializer = ProductTradeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -120,10 +120,9 @@ class ProductSellAPIView(APIView):
         data = serializer.validated_data
         product_slug = data['product']
         quantity = data['quantity']
-        quantity_needed = quantity
 
         product = get_object_or_404(Product, slug=product_slug)
-        print(product)
+
         if product.quantity < quantity:
             hub_ip = settings.HUB_IP
             quantity_needed = quantity - product.quantity
@@ -139,10 +138,10 @@ class ProductSellAPIView(APIView):
                     json=request_json,
                     timeout=5
                 )
+                response.raise_for_status()
                 print("Payload enviado ao HUB:", request_json)
                 print("Resposta do HUB:", response.status_code, response.text)
 
-                response.raise_for_status()
             except Exception as e:
                 print("Erro capturado no endpoint ProductSellAPIView: " + str(e))
                 return Response({
@@ -159,7 +158,8 @@ class ProductSellAPIView(APIView):
                 }, status=status.HTTP_424_FAILED_DEPENDENCY) 
             
         with transaction.atomic():
-            product.quantity += quantity_needed
+            if quantity_needed:
+                product.quantity += quantity_needed
             product.quantity -= quantity
             product.save()
 
