@@ -125,11 +125,13 @@ class ProductSellAPIView(APIView):
 
         if product.quantity < quantity:
             hub_ip = settings.HUB_IP
+            my_ip = settings.MY_IP
             quantity_needed = quantity - product.quantity
 
             request_json = {
                 "product": product.slug,
-                "quantity": quantity_needed
+                "quantity": quantity_needed,
+                "ip": my_ip
             }
 
             try:
