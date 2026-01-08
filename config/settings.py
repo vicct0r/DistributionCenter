@@ -125,5 +125,5 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-HUB_IP = env("HUB_IP")
+HUB_URL = env("HUB_URL")
 MY_IP = env("MY_IP")
